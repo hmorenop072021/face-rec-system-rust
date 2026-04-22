@@ -52,6 +52,17 @@ impl FaceService {
         
         let results = self.storage.search_face(embedding, 1).await?;
         
-        Ok(results.into_iter().next())
+        // --- CONTROL DE FALSOS POSITIVOS ---
+        // Solo aceptamos si la similitud (score) es superior al umbral.
+        // 0.45 - 0.50 es un valor seguro para ArcFace en 1:N
+        let threshold = 0.45;
+        
+        if let Some(best_match) = results.into_iter().next() {
+            if best_match.score >= threshold {
+                return Ok(Some(best_match));
+            }
+        }
+        
+        Ok(None)
     }
 }
